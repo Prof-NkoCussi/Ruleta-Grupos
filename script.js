@@ -247,12 +247,13 @@
     for (const c of pairs) {
       const aIn = pool.includes(c.a);
       const bIn = pool.includes(c.b);
-      if (round === c.round) {
-        if (state.first === null && aIn && bIn) return pool.indexOf(Math.random() < .5 ? c.a : c.b);
-        if (state.first === c.a && bIn) return pool.indexOf(c.b);
-        if (state.first === c.b && aIn) return pool.indexOf(c.a);
-      }
-      if (round < c.round && aIn && bIn) { blocked.add(c.a); blocked.add(c.b); }
+      // si ya salió uno de la pareja, el siguiente siempre es su compañero
+      if (state.first === c.a && bIn) return pool.indexOf(c.b);
+      if (state.first === c.b && aIn) return pool.indexOf(c.a);
+      // llegó (o ya pasó) su ronda: sale uno de los dos
+      if (state.first === null && round >= c.round && aIn && bIn) return pool.indexOf(Math.random() < .5 ? c.a : c.b);
+      // si no, no pueden salir: ni antes de su ronda ni como compañero de otro
+      if (aIn && bIn) { blocked.add(c.a); blocked.add(c.b); }
     }
     const others = [];
     pool.forEach((n, i) => { if (!blocked.has(n)) others.push(i); });
