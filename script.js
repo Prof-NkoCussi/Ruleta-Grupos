@@ -4,8 +4,12 @@
   const TAU = Math.PI * 2;
   const STORE = 'ruleta-tp-yolo-v1';
   const STORE_CFG = 'ruleta-tp-yolo-v1-ajustes';
-  // Pareja fija: si los dos están en la lista, quedan juntos en la ronda 3 o 4 de cada sorteo
-  const PAREJA = ['CABRERA, Ramiro', 'GONZALES, Elian'];
+  // Parejas fijas: si están en la lista, cada una queda junta en una ronda distinta elegida al azar de RONDAS
+  const PAREJAS = [
+    ['CABRERA, Ramiro', 'RODRIGUEZ, Santiago'],
+    ['BATALLANOS, Facundo', 'GONZALES, Elian'],
+  ];
+  const RONDAS = [2, 3, 4, 5];
 
   const $ = (id) => document.getElementById(id);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -163,7 +167,15 @@
      ESTADO
      ========================================================= */
   const empty = () => ({ names: [], pool: [], groups: [], first: null });
-  const newDraw = (names) => ({ names, pool: shuffle(names), groups: [], first: null, pairRound: 3 + Math.floor(Math.random() * 2) });
+  const newDraw = (names) => ({ names, pool: shuffle(names), groups: [], first: null, pairRounds: pairRounds(names.length) });
+
+  // una ronda distinta para cada pareja fija, sin pasarse de las rondas que alcanza la lista
+  function pairRounds(n) {
+    const max = Math.max(1, Math.floor(n / 2));
+    let opts = RONDAS.filter(r => r <= max);
+    if (opts.length < PAREJAS.length) opts = Array.from({ length: max }, (_, i) => i + 1);
+    return shuffle(opts).slice(0, PAREJAS.length);
+  }
   let state = store.get(STORE, null);
   if (!state || !Array.isArray(state.names) || !Array.isArray(state.pool) || !Array.isArray(state.groups)) state = empty();
   let cfg = store.get(STORE_CFG, null) || { a: '', b: '', round: 3, on: false };
@@ -191,7 +203,7 @@
   }
 
   /* ---------- ajustes ---------- */
-  const words = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().match(/[a-z]+/g) || [];
+  const words = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().match(/[a-z]+/g) || [];
 
   // busca en la lista sin importar mayúsculas, tildes, comas ni el orden apellido/nombre
   function findName(target) {
@@ -199,54 +211,52 @@
     return state.names.find(n => { const w = words(n); return t.every(x => w.includes(x)); });
   }
 
-  function fixedPair() {
-    const [a, b] = PAREJA.map(findName);
-    if (!a || !b || a === b) return null;
-    const maxRound = Math.max(1, Math.floor(state.names.length / 2));
-    return { a, b, round: Math.min(state.pairRound || 3, maxRound) };
+  function fixedPairs() {
+    const rounds = state.pairRounds || [3, 4];
+    const out = [];
+    PAREJAS.forEach(([x, y], k) => {
+      const a = findName(x), b = findName(y);
+      if (a && b && a !== b) out.push({ a, b, round: rounds[k] || 3 });
+    });
+    return out;
   }
 
-  function activeCfg() {
-    const fixed = fixedPair();
-    if (fixed) return fixed;
-    if (!cfg.on || !cfg.a || !cfg.b || cfg.a === cfg.b) return null;
-    if (!state.names.includes(cfg.a) || !state.names.includes(cfg.b)) return null;
-    return cfg;
-  }
-
-  function cfgGroupIndex() {
-    const c = activeCfg();
-    if (!c) return -1;
-    return state.groups.findIndex(g => g.includes(c.a) && g.includes(c.b));
+  // las parejas fijas mandan; si ninguna está en la lista se usa la del menú de ajustes
+  function activePairs() {
+    const fixed = fixedPairs();
+    if (fixed.length) return fixed;
+    if (!cfg.on || !cfg.a || !cfg.b || cfg.a === cfg.b) return [];
+    if (!state.names.includes(cfg.a) || !state.names.includes(cfg.b)) return [];
+    return [cfg];
   }
 
   function chooseTarget() {
     const list = items();
     const p = phase();
+    const pairs = activePairs();
 
     if (p === 'leftover') {
-      let idx = list.map((_, i) => i);
-      const gi = cfgGroupIndex();
-      if (gi >= 0 && idx.length > 1) idx = idx.filter(i => i !== gi);
-      return pick(idx);
+      const taken = pairs.map(c => state.groups.findIndex(g => g.includes(c.a) && g.includes(c.b)));
+      const idx = list.map((_, i) => i).filter(i => !taken.includes(i));
+      return idx.length ? pick(idx) : Math.floor(Math.random() * list.length);
     }
 
-    const c = activeCfg();
     const round = state.groups.length + 1;
-    if (c) {
-      const aIn = state.pool.includes(c.a);
-      const bIn = state.pool.includes(c.b);
+    const pool = state.pool;
+    const blocked = new Set();
+    for (const c of pairs) {
+      const aIn = pool.includes(c.a);
+      const bIn = pool.includes(c.b);
       if (round === c.round) {
-        if (state.first === null && aIn && bIn) return state.pool.indexOf(Math.random() < .5 ? c.a : c.b);
-        if (state.first === c.a && bIn) return state.pool.indexOf(c.b);
-        if (state.first === c.b && aIn) return state.pool.indexOf(c.a);
+        if (state.first === null && aIn && bIn) return pool.indexOf(Math.random() < .5 ? c.a : c.b);
+        if (state.first === c.a && bIn) return pool.indexOf(c.b);
+        if (state.first === c.b && aIn) return pool.indexOf(c.a);
       }
-      if (round < c.round && aIn && bIn) {
-        const others = [];
-        state.pool.forEach((n, i) => { if (n !== c.a && n !== c.b) others.push(i); });
-        if (others.length) return pick(others);
-      }
+      if (round < c.round && aIn && bIn) { blocked.add(c.a); blocked.add(c.b); }
     }
+    const others = [];
+    pool.forEach((n, i) => { if (!blocked.has(n)) others.push(i); });
+    if (others.length) return pick(others);
     return Math.floor(Math.random() * list.length);
   }
 
@@ -619,8 +629,11 @@
   }
 
   function updateCfgInfo() {
-    const fixed = fixedPair();
-    if (fixed) { cfgInfo.textContent = `Pareja fija: ${fixed.a} + ${fixed.b} · ronda ${fixed.round}. Este ajuste se ignora.`; return; }
+    const fixed = fixedPairs();
+    if (fixed.length) {
+      cfgInfo.textContent = 'Parejas fijas: ' + fixed.map(c => `${c.a} + ${c.b} (ronda ${c.round})`).join(' · ') + '. Este ajuste se ignora.';
+      return;
+    }
     const a = cfgA.value, b = cfgB.value, r = +cfgRound.value;
     let msg;
     if (!state.names.length) msg = 'Primero cargá la lista.';
