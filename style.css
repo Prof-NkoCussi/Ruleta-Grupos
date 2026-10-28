@@ -1,5 +1,5 @@
 :root {
-  --bg: #05080f;
+  --bg: #12305a;
   --panel: rgba(9, 14, 28, .82);
   --border: rgba(34, 211, 238, .22);
   --cyan: #22d3ee;
@@ -29,7 +29,6 @@ body {
 
 /* ---------- Encabezado ---------- */
 .top { text-align: center; padding: 22px 16px 6px; }
-.prompt { display: block; color: var(--green); font-size: 13px; opacity: .85; margin-bottom: 4px; }
 .top h1 {
   font-size: clamp(26px, 4.6vw, 54px);
   font-weight: 800;
@@ -38,9 +37,9 @@ body {
   text-shadow: 0 0 28px rgba(34, 211, 238, .35);
 }
 .top h1 .accent { color: var(--cyan); }
-.subtitle { margin-top: 8px; color: var(--muted); font-size: clamp(14px, 1.8vw, 20px); }
+.subtitle { margin-top: 8px; color: var(--muted); font-size: clamp(14px, 1.8vw, 20px); font-weight: 800; }
 .subtitle .sep { color: var(--pink); margin: 0 .5em; }
-.subtitle .curso { color: var(--violet); font-weight: 600; }
+.subtitle .curso { color: var(--violet); }
 
 /* ---------- Layout ---------- */
 .layout {

@@ -4,6 +4,8 @@
   const TAU = Math.PI * 2;
   const STORE = 'ruleta-tp-yolo-v1';
   const STORE_CFG = 'ruleta-tp-yolo-v1-ajustes';
+  // Pareja fija: si los dos están en la lista, quedan juntos en la ronda 3 o 4 de cada sorteo
+  const PAREJA = ['CABRERA, Ramiro', 'GONZALES, Elian'];
 
   const $ = (id) => document.getElementById(id);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -38,7 +40,7 @@
     const GLYPHS = ['<>', '</>', '{ }', '01', '10110', '=>', '&&', '()', '[]', '#!', '0x1F', 'ping',
       'TCP', 'UDP', 'SYN', 'ACK', '192.168.0.1', '::1', 'def', 'fn()', 'git push', 'ssh', 'HTTP 200',
       '/* */', 'YOLO', 'if()', 'return', '255.255.255.0', 'DNS', 'import'];
-    let w = 0, h = 0, nodes = [], packets = [], glyphs = [], last = 0, acc = 0;
+    let w = 0, h = 0, nodes = [], packets = [], glyphs = [], last = 0, acc = 0, bgFill;
 
     const newNode = () => ({
       x: Math.random() * w, y: Math.random() * h,
@@ -52,6 +54,10 @@
       c.width = w * dpr; c.height = h * dpr;
       c.style.width = w + 'px'; c.style.height = h + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // degradé azul marino: más claro abajo a la derecha, más oscuro en la esquina superior izquierda
+      bgFill = ctx.createRadialGradient(w * .62, h * .7, 0, w * .62, h * .7, Math.hypot(w, h) * .75);
+      bgFill.addColorStop(0, '#173c66');
+      bgFill.addColorStop(1, '#0d223e');
       const count = Math.max(24, Math.min(90, Math.round(w * h / 22000)));
       while (nodes.length < count) nodes.push(newNode());
       nodes.length = count;
@@ -79,7 +85,7 @@
     function loop(now) {
       const dt = Math.min(50, now - last || 16) / 16;
       last = now;
-      ctx.fillStyle = '#05080f';
+      ctx.fillStyle = bgFill;
       ctx.fillRect(0, 0, w, h);
 
       // símbolos de código flotando
@@ -157,6 +163,7 @@
      ESTADO
      ========================================================= */
   const empty = () => ({ names: [], pool: [], groups: [], first: null });
+  const newDraw = (names) => ({ names, pool: shuffle(names), groups: [], first: null, pairRound: 3 + Math.floor(Math.random() * 2) });
   let state = store.get(STORE, null);
   if (!state || !Array.isArray(state.names) || !Array.isArray(state.pool) || !Array.isArray(state.groups)) state = empty();
   let cfg = store.get(STORE_CFG, null) || { a: '', b: '', round: 3, on: false };
@@ -184,7 +191,24 @@
   }
 
   /* ---------- ajustes ---------- */
+  const words = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().match(/[a-z]+/g) || [];
+
+  // busca en la lista sin importar mayúsculas, tildes, comas ni el orden apellido/nombre
+  function findName(target) {
+    const t = words(target);
+    return state.names.find(n => { const w = words(n); return t.every(x => w.includes(x)); });
+  }
+
+  function fixedPair() {
+    const [a, b] = PAREJA.map(findName);
+    if (!a || !b || a === b) return null;
+    const maxRound = Math.max(1, Math.floor(state.names.length / 2));
+    return { a, b, round: Math.min(state.pairRound || 3, maxRound) };
+  }
+
   function activeCfg() {
+    const fixed = fixedPair();
+    if (fixed) return fixed;
     if (!cfg.on || !cfg.a || !cfg.b || cfg.a === cfg.b) return null;
     if (!state.names.includes(cfg.a) || !state.names.includes(cfg.b)) return null;
     return cfg;
@@ -509,7 +533,7 @@
     if (names.length < 2) { toast('Necesito al menos 2 nombres'); return; }
     const started = state.groups.length || state.first !== null;
     if (started && !confirm('Esto reinicia el sorteo. ¿Seguimos?')) return;
-    state = { names, pool: shuffle(names), groups: [], first: null };
+    state = newDraw(names);
     save();
     listModal.hidden = true;
     render();
@@ -521,7 +545,7 @@
   $('resetBtn').addEventListener('click', () => {
     if (!state.names.length) return;
     if (!confirm('¿Reiniciar el sorteo? Se borran los grupos armados.')) return;
-    state = { names: state.names, pool: shuffle(state.names), groups: [], first: null };
+    state = newDraw(state.names);
     save();
     render();
   });
@@ -595,6 +619,8 @@
   }
 
   function updateCfgInfo() {
+    const fixed = fixedPair();
+    if (fixed) { cfgInfo.textContent = `Pareja fija: ${fixed.a} + ${fixed.b} · ronda ${fixed.round}. Este ajuste se ignora.`; return; }
     const a = cfgA.value, b = cfgB.value, r = +cfgRound.value;
     let msg;
     if (!state.names.length) msg = 'Primero cargá la lista.';
