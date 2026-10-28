@@ -37,7 +37,7 @@ body {
   text-shadow: 0 0 28px rgba(34, 211, 238, .35);
 }
 .top h1 .accent { color: var(--cyan); }
-.subtitle { margin-top: 8px; color: var(--muted); font-size: clamp(14px, 1.8vw, 20px); font-weight: 800; }
+.subtitle { margin-top: 8px; color: var(--text); font-size: clamp(14px, 1.8vw, 20px); font-weight: 800; }
 .subtitle .sep { color: var(--pink); margin: 0 .5em; }
 .subtitle .curso { color: var(--violet); }
 
@@ -133,7 +133,7 @@ body {
   animation: blink 1s steps(1) infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
-.hint { font-size: 12px; color: var(--muted); opacity: .7; }
+.hint { font-size: 12px; color: var(--text); }
 
 /* ---------- Panel de grupos ---------- */
 .panel {
@@ -151,7 +151,7 @@ body {
 
 .panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .panel h2 { font-size: 18px; color: var(--green); }
-.counter { font-size: 12px; color: var(--muted); }
+.counter { font-size: 12px; color: var(--text); }
 
 .groups { list-style: none; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 60px; flex: 1; }
 .groups:empty::before { content: "// todavía no hay conexiones"; color: var(--muted); font-size: 13px; }
