@@ -8,6 +8,7 @@
   const PAREJAS = [
     ['CABRERA, Ramiro', 'RODRIGUEZ, Santiago'],
     ['BATALLANOS, Facundo', 'GONZALES, Elian'],
+    ['REMENTERIA, Diego', 'VALDEZ, Leandro'],
   ];
   const RONDAS = [2, 3, 4, 5];
 
