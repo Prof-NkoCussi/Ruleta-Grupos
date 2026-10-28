@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruleta de Grupos · TP Final</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="bg"></canvas>
+
+  <header class="top">
+    <span class="prompt">~/tp-final $ ./armar-grupos.sh</span>
+    <h1>TP Final <span class="accent">- YoLo v1</span></h1>
+    <p class="subtitle">Redes I<span class="sep">/</span>Software II<span class="sep">/</span><span class="curso">5to 1ra</span></p>
+  </header>
+
+  <main class="layout">
+    <section class="wheel-zone">
+      <div class="status" id="status">Cargá la lista para empezar</div>
+
+      <div class="wheel-wrap">
+        <div class="pointer" id="pointer"></div>
+        <canvas id="wheel" width="800" height="800"></canvas>
+        <button id="spinBtn" class="hub">GIRAR</button>
+      </div>
+
+      <div class="picked" id="picked"></div>
+      <p class="hint">Espacio o Enter para girar</p>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h2>// grupos</h2>
+        <span class="counter" id="counter"></span>
+      </div>
+      <ol class="groups" id="groups"></ol>
+      <div class="actions">
+        <button id="copyBtn" class="btn">Copiar</button>
+        <button id="downloadBtn" class="btn">Descargar .txt</button>
+        <button id="resetBtn" class="btn ghost">Reiniciar sorteo</button>
+        <button id="editBtn" class="btn ghost">Editar lista</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="foot"><span id="ver">ruleta v1.0</span></footer>
+
+  <!-- Lista de estudiantes -->
+  <div class="modal" id="listModal" hidden>
+    <div class="card">
+      <h3>Lista de estudiantes</h3>
+      <p class="muted">Un nombre por línea. Queda guardada solo en este navegador.</p>
+      <textarea id="namesInput" placeholder="Ana Pérez&#10;Juan Gómez&#10;..."></textarea>
+      <div class="card-actions">
+        <button id="cancelList" class="btn ghost">Cancelar</button>
+        <button id="saveList" class="btn">Cargar en la ruleta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ajustes -->
+  <div class="modal" id="cfgModal" hidden>
+    <div class="card">
+      <h3>Ajustes</h3>
+      <label>Integrante A <select id="cfgA"></select></label>
+      <label>Integrante B <select id="cfgB"></select></label>
+      <label>Ronda <select id="cfgRound"></select></label>
+      <label class="check"><input type="checkbox" id="cfgOn"> Activo</label>
+      <p class="muted small" id="cfgInfo"></p>
+      <div class="card-actions">
+        <button id="cfgCancel" class="btn ghost">Cerrar</button>
+        <button id="cfgSave" class="btn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conexión establecida -->
+  <div class="overlay" id="linkOverlay" hidden>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i><span id="termTitle">handshake.sh</span></div>
+      <div class="link-visual">
+        <div class="node" id="nodeA"></div>
+        <div class="wire"><span></span><span></span><span></span></div>
+        <div class="node" id="nodeB"></div>
+      </div>
+      <pre id="termLog"></pre>
+      <p class="muted small">click o Enter para continuar</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
